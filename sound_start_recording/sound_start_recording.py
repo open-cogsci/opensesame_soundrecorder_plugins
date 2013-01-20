@@ -60,17 +60,20 @@ class sound_start_recording(item.item):
 		path = os.path.join(os.path.dirname(__file__), "Soundrecorder.py")
 		soundrecorder = imp.load_source("Soundrecorder", path)
 
-		if self.recording == "Yes":
-			if self.channels == "Mono":
-				channels = 1
-			elif self.channels == "Stereo":
-				channels = 2
-			self.exp.soundrecorder = soundrecorder.Soundrecorder(self.output_file, channels, int(self.bitrate))
-		else:
-			self.exp.soundrecorder = soundrecorder.DummyRecorder()
-			
-		self.exp.cleanup_functions.append(self.exp.soundrecorder.stop)
+		output_file = self.get("output_file")
+		if self.get("channels") == "Mono":
+			channels = 1
+		elif self.get("channels") == "Stereo":
+			channels = 2
+		bitrate = self.get("bitrate")
 		
+		
+		if self.recording == "Yes":
+			self.soundrecorder = soundrecorder.Soundrecorder(output_file, channels, bitrate)
+		else:
+			self.soundrecorder = soundrecorder.DummyRecorder()
+			
+		self.exp.cleanup_functions.append(self.soundrecorder.stop)
 		return True
 
 	def run(self):
@@ -78,6 +81,10 @@ class sound_start_recording(item.item):
 		if hasattr(self.exp,"soundrecorder") and self.exp.soundrecorder.is_recording():
 			raise exceptions.runtime_error("Sound recorder already running. Please make sure only one instance of sound recorder is recording at the same time")		
 		
+		# Make this sound recorder the current sound recorder for sound_stop_recording to operate on later.
+		self.exp.soundrecorder = self.soundrecorder
+		
+		# Start recording
 		self.exp.soundrecorder.start()
 		return True
 

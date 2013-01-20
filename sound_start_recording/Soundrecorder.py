@@ -20,7 +20,7 @@ import wave
 import threading
 
 class Soundrecorder(threading.Thread):
-	def __init__(self, output_file, channels=1, bitrate=44100):
+	def __init__(self, output_file="default.wav", channels=2, bitrate=44100):
 		self.output_file = output_file
 		self.channels = channels
 		self.bitrate = bitrate
@@ -31,7 +31,6 @@ class Soundrecorder(threading.Thread):
 		threading.Thread.__init__ ( self )
 
 	def run(self):
-		print "Starting thread"
 		stream = self.input.open(format = self._format,
 				channels = self.channels,
 				rate = self.bitrate,
