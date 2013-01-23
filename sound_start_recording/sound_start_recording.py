@@ -18,7 +18,8 @@ along with OpenSesame.  If not, see <http://www.gnu.org/licenses/>.
 
 from libopensesame import item, exceptions, debug
 from libqtopensesame import qtplugin
-import os.path
+import os
+import re
 import imp
 
 __author__ = "Daniel Schreij"
@@ -37,12 +38,13 @@ class sound_start_recording(item.item):
 		Constructor
 		"""
 		self.item_type = "sound_start_recording"
-		self.version = 0.1
+		self.version = 0.11
 
 		self.recording = "Yes"
 		self.channels = "Mono"
-		self.bitrate = "44100"
-		self.output_file = os.path.join("subject_[subject_nr]","[count_trial_sequence]")
+		self.bitrate = "44100"		
+		self.output_file = ""
+		self.file_exists_action = "Overwrite"
 		self.exp = experiment
 
 		# Provide a short accurate description of the items functionality
@@ -50,6 +52,28 @@ class sound_start_recording(item.item):
 
 		# The parent handles the rest of the contruction
 		item.item.__init__(self, name, experiment, string)
+
+	
+	def _generate_suffix(self,path_to_file):		
+		pattern = "_[0-9]+$"		
+		(filename,ext) = os.path.splitext(path_to_file)
+				
+		# Increase suffix no if found
+		filename_exists = True
+		while filename_exists:
+			match = re.search(pattern, filename)						
+			if match:					
+				no = int(filename[match.start()+1:])+1
+				filename = re.sub(pattern,"_"+str(no),filename)			
+			else:			
+				filename = filename + "_1"
+			
+			new_filename = filename + ext			
+			if not os.path.exists(new_filename):
+				filename_exists = False
+									
+		return new_filename
+		
 
 
 	def prepare(self):
@@ -59,14 +83,27 @@ class sound_start_recording(item.item):
 		
 		path = os.path.join(os.path.dirname(__file__), "Soundrecorder.py")
 		soundrecorder = imp.load_source("Soundrecorder", path)
+		
+		rel_loc = os.path.normpath(self.get("output_file"))
+		output_file = os.path.normpath(os.path.join(self.exp.experiment_path,rel_loc))
 
-		output_file = self.get("output_file")
+		# Check for a subfolder (when it is specified) that it exists and if not, create it
+		if os.path.exists(os.path.dirname(output_file)):
+			if self.file_exists_action == "Append suffix to filename":
+				# Search for underscore/number suffixes								
+				output_file = self._generate_suffix(output_file)					
+		else:
+			if os.path.dirname(rel_loc) != "":
+				try:				
+					os.mkdir(os.path.dirname(output_file))
+				except Exception as e:
+					raise exceptions.runtime_error("Error writing sound file: " + str(e))
+				
 		if self.get("channels") == "Mono":
 			channels = 1
 		elif self.get("channels") == "Stereo":
 			channels = 2
 		bitrate = self.get("bitrate")
-		
 		
 		if self.recording == "Yes":
 			self.soundrecorder = soundrecorder.Soundrecorder(output_file, channels, bitrate)
@@ -125,7 +162,8 @@ class qtsound_start_recording(sound_start_recording, qtplugin.qtplugin):
 		self.add_combobox_control("bitrate", "Bit rate", ["44100","22050","11025"], \
 			tooltip = "Bitrate of recording (higher is better quality)")
 		self.add_line_edit_control("output_file", "Output Folder/File", tooltip = "Path to output file")
-		
+		self.add_combobox_control("file_exists_action", "If file exists", ["Overwrite","Append suffix to filename"], \
+			tooltip = "Choose what to do if the sound file already exists")
 		self.add_text("<small><b>Sound recorder OpenSesame plug-in v%.2f</b></small>" % self.version)
 
 		# Add a stretch to the edit_vbox, so that the controls do not
