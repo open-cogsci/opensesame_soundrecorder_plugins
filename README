@@ -1,0 +1,16 @@
+Sound recorder plug-ins for OpenSesame
+Copyright Daniel Schreij (2011-2012)
+
+ABOUT
+=====
+This is a set of plug-ins for OpenSesame, a graphical experiment builder for the
+social sciences. These plug-ins add the ability to record sound from the microphone.
+
+DOCUMENTATION AND INSTALLATION INSTRUCTIONS
+===========================================
+- <http://osdoc.cogsci.nl/plug-ins/soundrecorder-plug-ins>
+
+DEPENDENCIES
+============
+- OpenSesame <http://www.cogsci.nl/opensesame>
+- PyAudio <http://people.csail.mit.edu/hubert/pyaudio/>
