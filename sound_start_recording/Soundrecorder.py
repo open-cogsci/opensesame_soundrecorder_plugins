@@ -15,48 +15,82 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with OpenSesame.  If not, see <http://www.gnu.org/licenses/>.
 """
-import pyaudio
-import wave
+
+import pymedia.audio.sound as sound
+import pymedia.audio.acodec as acodec
 import threading
+import time
+import wave
 
 class Soundrecorder(threading.Thread):
-	def __init__(self, output_file="default.wav", channels=2, bitrate=44100):
+	def __init__(self, output_file="default.wav", channels=2, samplerate=44100, filetype="wav"):
 		self.output_file = output_file
 		self.channels = channels
-		self.bitrate = bitrate
-		self._format = pyaudio.paInt16
-		self._chunk = 1024
+		self.samplerate = samplerate
+		self.filetype = filetype
+		self._format = sound.AFMT_S16_LE
 		self._recording = False
-		self.input = pyaudio.PyAudio()
+		self._allowed_filetypes = ["wav","mp3"] #ogg to be added
+		self.input = sound.Input( samplerate, channels, self._format )					
+		
 		threading.Thread.__init__ ( self )
+		
 
 	def run(self):
-		stream = self.input.open(format = self._format,
-				channels = self.channels,
-				rate = self.bitrate,
-				input = True,
-				frames_per_buffer = self._chunk)
-
+		if self.filetype in self._allowed_filetypes:	
+			if self.filetype == "wav":
+				self._writeToWave()
+			else:		
+				self._encode(self.filetype)
+		else:
+			raise Exception("Illegal sound file type")
+			
+		
+	def _writeToWave(self):		
 		recorded = []
 		self._recording = True
+		self.input.start()
 		while self._recording:
-			recorded.append(stream.read(self._chunk))
-
-		stream.close()
-		self.input.terminate()
-
-		# write data to WAVE file
+			s = self.input.getData()
+			if s and len(s):
+				recorded.append(s)
+			else:
+				time.sleep(0.03)
+				
+		self.input.stop()
 		data = ''.join(recorded)
-
+		
 		wf = wave.open(self.output_file, 'wb')
-		wf.setnchannels(self.channels)
-		wf.setsampwidth(self.input.get_sample_size(self._format))
-		wf.setframerate(self.bitrate)
+		wf.setparams( (self.channels, 2, self.samplerate, 0, 'NONE','') )
 		wf.writeframes(data)
 		wf.close()
+		
+		
+	def _encode(self,filetype):
+		cparams= { 	'id': acodec.getCodecID( filetype ),
+				'bitrate': 128000,
+				'sample_rate': self.samplerate,
+				'channels': self.channels 
+		} 	
+							
+		out_fp = open(self.output_file, 'wb')
+		ac= acodec.Encoder( cparams )									
+		
+		self._recording = True
+		self.input.start()
+		while self._recording:
+			s = self.input.getData()
+			if s and len(s):
+				for fr in ac.encode(s):
+					out_fp.write(fr)
+			else:
+				time.sleep(0.03)
+		self.input.stop()
+		
 
 	def stop(self):
 		self._recording = False
+
 
 	def is_recording(self):
 		return self._recording

@@ -22,6 +22,16 @@ import os
 import re
 import imp
 
+# Already try to import required libraries, otherwise the error might occur
+# in the other (Soundrecorder) thread and not be caught
+try:
+	import pymedia.audio.sound as sound
+	import pymedia.audio.acodec as acodec
+	import wave
+except Exception as e:
+	exceptions.runtime_error("Failed to import required library: " + str(e))
+	
+
 __author__ = "Daniel Schreij"
 __license__ = "GPLv3"
 
@@ -38,12 +48,13 @@ class sound_start_recording(item.item):
 		Constructor
 		"""
 		self.item_type = "sound_start_recording"
-		self.version = 0.11
+		self.version = 0.12
 
 		self.recording = "Yes"
 		self.channels = "Mono"
 		self.bitrate = "44100"		
-		self.output_file = ""
+		self.output_file = "default"
+		self.compression = "None (wav)"
 		self.file_exists_action = "Overwrite"
 		self.exp = experiment
 
@@ -74,8 +85,7 @@ class sound_start_recording(item.item):
 									
 		return new_filename
 		
-
-
+		
 	def prepare(self):
 		# Make sure only one instance of sound recorder records at the same time
 		if hasattr(self.exp,"soundrecorder") and self.exp.soundrecorder.is_recording():
@@ -83,35 +93,53 @@ class sound_start_recording(item.item):
 		
 		path = os.path.join(os.path.dirname(__file__), "Soundrecorder.py")
 		soundrecorder = imp.load_source("Soundrecorder", path)
-		
-		rel_loc = os.path.normpath(self.get("output_file"))
-		output_file = os.path.normpath(os.path.join(self.exp.experiment_path,rel_loc))
-
-		# Check for a subfolder (when it is specified) that it exists and if not, create it
-		if os.path.exists(os.path.dirname(output_file)):
-			if self.file_exists_action == "Append suffix to filename":
-				# Search for underscore/number suffixes								
-				output_file = self._generate_suffix(output_file)					
-		else:
-			if os.path.dirname(rel_loc) != "":
-				try:				
-					os.mkdir(os.path.dirname(output_file))
-				except Exception as e:
-					raise exceptions.runtime_error("Error writing sound file: " + str(e))
-				
+					
 		if self.get("channels") == "Mono":
 			channels = 1
 		elif self.get("channels") == "Stereo":
 			channels = 2
 		bitrate = self.get("bitrate")
 		
+		compression = self.get("compression")
+		if compression == "None (wav)":
+			filetype = "wav"
+		elif compression == "MP3":
+			filetype = "mp3"
+		# Not yet supported, bug in pymedia when saving ogg files
+		elif compression == "Ogg Vorbis":
+			filetype = "ogg"
+		rel_loc = os.path.normpath(self.get("output_file"))
+		output_file = os.path.normpath(os.path.join(self.exp.experiment_path,rel_loc))
+
+		# Make sure file extension corresponds to audio type
+		extension = os.path.splitext(output_file)[1]
+		if extension != "":
+			ext = extension[1:]
+			if ext != filetype:
+				output_file += "." + filetype	
+		else:
+			output_file += "." + filetype
+
+		# Check for a subfolder (when it is specified) that it exists and if not, create it
+		if os.path.exists(os.path.dirname(output_file)):
+			if self.file_exists_action == "Append suffix to filename":
+				# Search for underscore/number suffixes								
+				output_file = self._generate_suffix(output_file)										
+		else:
+			if os.path.dirname(rel_loc) != "":
+				try:				
+					os.mkdir(os.path.dirname(output_file))
+				except Exception as e:
+					raise exceptions.runtime_error("Error creating sound file: " + str(e))
+		
 		if self.recording == "Yes":
-			self.soundrecorder = soundrecorder.Soundrecorder(output_file, channels, bitrate)
+			self.soundrecorder = soundrecorder.Soundrecorder(output_file, channels, bitrate, filetype)
 		else:
 			self.soundrecorder = soundrecorder.DummyRecorder()
 			
 		self.exp.cleanup_functions.append(self.soundrecorder.stop)
 		return True
+
 
 	def run(self):
 		# Make sure only one instance of sound recorder records at the same time
@@ -124,6 +152,7 @@ class sound_start_recording(item.item):
 		# Start recording
 		self.exp.soundrecorder.start()
 		return True
+
 
 class qtsound_start_recording(sound_start_recording, qtplugin.qtplugin):
 	"""
@@ -162,6 +191,8 @@ class qtsound_start_recording(sound_start_recording, qtplugin.qtplugin):
 		self.add_combobox_control("bitrate", "Bit rate", ["44100","22050","11025"], \
 			tooltip = "Bitrate of recording (higher is better quality)")
 		self.add_line_edit_control("output_file", "Output Folder/File", tooltip = "Path to output file")
+		self.add_combobox_control("compression", "Compression", ["None (wav)", "MP3"], \
+			tooltip = "Compression type of audio output")
 		self.add_combobox_control("file_exists_action", "If file exists", ["Overwrite","Append suffix to filename"], \
 			tooltip = "Choose what to do if the sound file already exists")
 		self.add_text("<small><b>Sound recorder OpenSesame plug-in v%.2f</b></small>" % self.version)
