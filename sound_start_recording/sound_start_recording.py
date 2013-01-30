@@ -128,7 +128,7 @@ class sound_start_recording(item.item):
 		else:
 			if os.path.dirname(rel_loc) != "":
 				try:				
-					os.mkdir(os.path.dirname(output_file))
+					os.makedirs(os.path.dirname(output_file))
 				except Exception as e:
 					raise exceptions.runtime_error("Error creating sound file: " + str(e))
 		
