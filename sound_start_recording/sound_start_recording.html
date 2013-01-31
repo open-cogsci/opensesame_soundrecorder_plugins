@@ -1,0 +1,57 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+<HEAD>
+	<META HTTP-EQUIV="CONTENT-TYPE" CONTENT="text/html; charset=utf-8">
+	<TITLE></TITLE>
+	<META NAME="GENERATOR" CONTENT="LibreOffice 3.3  (Unix)">
+	<META NAME="CREATED" CONTENT="0;0">
+	<META NAME="CHANGED" CONTENT="20110614;20375500">
+	<STYLE TYPE="text/css">
+	<!--
+		@page { margin: 0.79in }
+		P { margin-bottom: 0.08in }
+		H1 { margin-bottom: 0.08in }
+		H1.western { font-family: "Arial", sans-serif; font-size: 16pt }
+		H1.cjk { font-family: "Droid Sans Fallback"; font-size: 16pt }
+		H1.ctl { font-family: "Lohit Hindi"; font-size: 16pt }
+		PRE.cjk { font-family: "Droid Sans Fallback", monospace }
+		H2.western { font-family: "Albany", sans-serif; font-size: 14pt; font-style: italic }
+		H2.cjk { font-family: "HG Mincho Light J"; font-size: 14pt; font-style: italic }
+		H2.ctl { font-family: "Arial Unicode MS"; font-size: 14pt; font-style: italic }
+		A:link { so-language: zxx }
+	-->
+	</STYLE>
+</HEAD>
+<BODY LANG="en-US" DIR="LTR">
+<H1 CLASS="western">Sound_start_recording</H1>
+<P>The sound_start_recording plug-in provide  the possibility to record audio from a microphone or other line-in device. For this item to work correctly, please make sure that the microphone or line-in port is registered as the <em>default </em>sound input device of your operating system. You can change this in the sound settings of your OS. Recordings can be saved either in uncompressed wave (.wav) format or in MPEG Layer-3 (.mp3). Sound will be recorded until a <em>stop_sound_recording</em> item is encountered, or if the soundrecorder is stopped in script by calling <code>exp.soundrecorder.stop()</code>. The
+following options are available:</P>
+<UL>
+	<LI><strong>Record sound</strong> [<em>yes</em> or <em>no</em>]: Indicates if sound should be recorded and saved to a file. The option &quot;No&quot; is useful when you ar test running your experiment, during which no sound needs to be recorded yet.<br><br>
+	<LI><strong>Channels </strong>[<em>mono</em> or <em>stereo</em>]: Indicates if the recording should consist of one channel (mono) or two channels (stereo). One channel will result in a smaller file size.<br><br>
+	<LI><strong>Sample rate </strong>[<em>11025, 22050</em> or<em> 44100</em>]: The sample rate of the audio file. The higher the number, the better the audio quality.<br>
+    <br>
+  <LI><strong>Output Folder/File:</strong> The location at which the audio file should be saved. This location is relative to the folder in which the file of the current experiment is located. You may specify several subfolders if you prefer and if these folders do not yet exist, they are created for you. An example entry could be:<br>
+	  <br>
+	  <code>recordings\experiment_X\filename.mp3</code><br>
+	  <br>
+	  You can use variable names in this field
+too, delimited by [ ]. For example:<br>
+<br>
+<code>recordings\subj_[subject_nr]\trial_[count_trial_sequence]</code><br>
+    <br>
+    The extension of the file will automatically determined by the selected option of <em>compression.<br>
+    <br>
+    </em>  
+	<LI><strong>Compression </strong>[<em>wav</em> or <em>mp3</em>]: Indicates whether the audio file should be saved as an uncompressed .wav file (larger file size) or a compressed .mp3 file (smaller file size). If you want to play back recordings by using the OpenSesame sampler item, you should choose wav as the sampler item is not able to playback MP3s. The extension of the filename will automatically be determined by the value that is selected in this option.<br>
+	  <br>    
+    <LI><strong>If file exists</strong> [<em>overwrite</em> or<em> append suffix to filename</em>]: Indicates what action to take if a file with the name specified in <em>Output Folder/File </em>already exists.With <em>overwrite</em> selected, the file is simply overwritten and the old file will be lost. If <em>append suffix to filename</em> is selected, a number will be appended to the  file when it is saved(e.g. output_1.mp3, output_2.mp3 and so on)
+</UL>
+<H2 CLASS="western">Accessing the soundrecorder in  inline_script</H2>
+<P> When the sound recorder is currently recording, it will be available under the variable <em>self.experiment.soundrecorder</em> (or <em>exp.soundrecorder</em> for OpenSesame &gt; 0.25).</P>
+<P>Useful functions are:</P>
+<P><strong>soundrecorder.is_recording(): </strong>Returns True if it is currently recording and False otherwise.</P>
+<P><strong>soundrecorder.stop():</strong> Does the same as the item <em>stop_sound_recording</em>. If this function is called when the soundrecorder is currently recording, it wil stop doing so and write the recorded audio to a file. Please note that it is <u>not possible to resume recording with a soundrecorder item  once it has been stopped</u>. You will have to use a new soundrecorder item to make a subsequent recording.</P>
+<P STYLE="margin-bottom: 0in">&nbsp;</P>
+</BODY>
+</HTML>

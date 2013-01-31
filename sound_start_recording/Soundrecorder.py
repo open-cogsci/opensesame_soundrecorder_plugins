@@ -97,6 +97,7 @@ class Soundrecorder(threading.Thread):
 		
 
 class DummyRecorder():
+	""" Dummy class that mimics the SoundRecorder class, but whose methods do nothing """
 	def __init__(self):
 		pass
 

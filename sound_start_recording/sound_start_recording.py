@@ -52,7 +52,7 @@ class sound_start_recording(item.item):
 
 		self.recording = "Yes"
 		self.channels = "Mono"
-		self.bitrate = "44100"		
+		self.samplerate = "44100"		
 		self.output_file = "default"
 		self.compression = "None (wav)"
 		self.file_exists_action = "Overwrite"
@@ -69,7 +69,7 @@ class sound_start_recording(item.item):
 		pattern = "_[0-9]+$"		
 		(filename,ext) = os.path.splitext(path_to_file)
 				
-		# Increase suffix no if found
+		# Keep increasing suffix number if file with the current suffix already exists
 		filename_exists = True
 		while filename_exists:
 			match = re.search(pattern, filename)						
@@ -91,23 +91,28 @@ class sound_start_recording(item.item):
 		if hasattr(self.exp,"soundrecorder") and self.exp.soundrecorder.is_recording():
 			raise exceptions.runtime_error("Sound recorder already running")
 		
+		# Load Soundrecorder class
 		path = os.path.join(os.path.dirname(__file__), "Soundrecorder.py")
 		soundrecorder = imp.load_source("Soundrecorder", path)
 					
+		# Process attributes
 		if self.get("channels") == "Mono":
 			channels = 1
 		elif self.get("channels") == "Stereo":
 			channels = 2
-		bitrate = self.get("bitrate")
+		samplerate = self.get("samplerate")
 		
 		compression = self.get("compression")
 		if compression == "None (wav)":
 			filetype = "wav"
 		elif compression == "MP3":
 			filetype = "mp3"
+			
 		# Not yet supported, bug in pymedia when saving ogg files
 		elif compression == "Ogg Vorbis":
 			filetype = "ogg"
+			
+		# Make output location relative to location of experiment
 		rel_loc = os.path.normpath(self.get("output_file"))
 		output_file = os.path.normpath(os.path.join(self.exp.experiment_path,rel_loc))
 
@@ -132,8 +137,9 @@ class sound_start_recording(item.item):
 				except Exception as e:
 					raise exceptions.runtime_error("Error creating sound file: " + str(e))
 		
+		# Create real recorder or dummy recorder (which just passes everything to empty functions)
 		if self.recording == "Yes":
-			self.soundrecorder = soundrecorder.Soundrecorder(output_file, channels, bitrate, filetype)
+			self.soundrecorder = soundrecorder.Soundrecorder(output_file, channels, samplerate, filetype)
 		else:
 			self.soundrecorder = soundrecorder.DummyRecorder()
 			
@@ -188,14 +194,14 @@ class qtsound_start_recording(sound_start_recording, qtplugin.qtplugin):
 			tooltip = "Indicates if sound should be recorded (No for test-runs)")
 		self.add_combobox_control("channels", "Channels", ["Mono","Stereo"], \
 			tooltip = "Record in one or two channels")   
-		self.add_combobox_control("bitrate", "Bit rate", ["44100","22050","11025"], \
-			tooltip = "Bitrate of recording (higher is better quality)")
+		self.add_combobox_control("samplerate", "Sample rate", ["44100","22050","11025"], \
+			tooltip = "Sampler ate of recording (higher is better quality)")
 		self.add_line_edit_control("output_file", "Output Folder/File", tooltip = "Path to output file")
 		self.add_combobox_control("compression", "Compression", ["None (wav)", "MP3"], \
 			tooltip = "Compression type of audio output")
 		self.add_combobox_control("file_exists_action", "If file exists", ["Overwrite","Append suffix to filename"], \
 			tooltip = "Choose what to do if the sound file already exists")
-		self.add_text("<small><b>Sound recorder OpenSesame plug-in v%.2f</b></small>" % self.version)
+		self.add_text("<small><b>Sound recorder OpenSesame plug-in v%.2f, Copyright (2010-2012) %s </b></small>" % (self.version, __author__))
 
 		# Add a stretch to the edit_vbox, so that the controls do not
 		# stretch to the bottom of the window.
