@@ -16,8 +16,23 @@ You should have received a copy of the GNU General Public License
 along with OpenSesame.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import pymedia.audio.sound as sound
-import pymedia.audio.acodec as acodec
+import imp
+import os
+import sys
+
+try:
+	import pymedia.audio.sound as sound
+	import pymedia.audio.acodec as acodec
+except:
+	try:
+		sys.path.append(os.getcwd())
+		(f,p,d) = imp.find_module("pymedia",[os.path.dirname(__file__)])
+		imp.load_module("pymedia",f,p,d)
+		sound = pymedia.audio.sound
+		acodec = pymedia.audio.acodec
+	except Exception as e:
+		raise e
+	
 import threading
 import time
 import wave
@@ -25,13 +40,14 @@ import wave
 class Soundrecorder(threading.Thread):
 	def __init__(self, output_file="default.wav", channels=2, samplerate=44100, filetype="wav"):
 		self.output_file = output_file
-		self.channels = channels
-		self.samplerate = samplerate
+		self.channels = int(channels)
+		self.samplerate = int(samplerate)
 		self.filetype = filetype
 		self._format = sound.AFMT_S16_LE
 		self._recording = False
 		self._allowed_filetypes = ["wav","mp3"] #ogg to be added
-		self.input = sound.Input( samplerate, channels, self._format )					
+		
+		self.input = sound.Input( self.samplerate, self.channels, self._format )					
 		
 		threading.Thread.__init__ ( self )
 		
