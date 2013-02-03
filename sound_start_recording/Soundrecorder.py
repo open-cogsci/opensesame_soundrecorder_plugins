@@ -19,6 +19,9 @@ along with OpenSesame.  If not, see <http://www.gnu.org/licenses/>.
 import imp
 import os
 import sys
+import time
+import threading
+import wave
 
 try:
 	import pymedia.audio.sound as sound
@@ -28,14 +31,10 @@ except:
 		sys.path.append(os.getcwd())
 		(f,p,d) = imp.find_module("pymedia",[os.path.dirname(__file__)])
 		imp.load_module("pymedia",f,p,d)
-		sound = pymedia.audio.sound
-		acodec = pymedia.audio.acodec
+		import pymedia.audio.sound as sound
+		import pymedia.audio.acodec as acodec
 	except Exception as e:
 		raise e
-	
-import threading
-import time
-import wave
 
 class Soundrecorder(threading.Thread):
 	def __init__(self, output_file="default.wav", channels=2, samplerate=44100, filetype="wav"):
