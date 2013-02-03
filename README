@@ -8,9 +8,9 @@ social sciences. These plug-ins add the ability to record sound from the microph
 
 DOCUMENTATION AND INSTALLATION INSTRUCTIONS
 ===========================================
-- <http://osdoc.cogsci.nl/plug-ins/soundrecorder-plug-ins>
+- <http://osdoc.cogsci.nl/devices/soundrecorder>
 
 DEPENDENCIES
 ============
 - OpenSesame <http://www.cogsci.nl/opensesame>
-- PyAudio <http://people.csail.mit.edu/hubert/pyaudio/>
+- PyMedia <http://http://pymedia.org/>,<http://www.lfd.uci.edu/~gohlke/pythonlibs/#pymedia>
