@@ -94,51 +94,51 @@ class sound_start_recording(item.item):
 		# Load Soundrecorder class
 		path = os.path.join(os.path.dirname(__file__), "Soundrecorder.py")
 		soundrecorder = imp.load_source("Soundrecorder", path)
-					
-		# Process attributes
-		if self.get("channels") == "Mono":
-			channels = 1
-		elif self.get("channels") == "Stereo":
-			channels = 2
-		samplerate = self.get("samplerate")
-		
-		compression = self.get("compression")
-		if compression == "None (wav)":
-			filetype = "wav"
-		elif compression == "MP3":
-			filetype = "mp3"
-			
-		# Not yet supported, bug in pymedia when saving ogg files
-		elif compression == "Ogg Vorbis":
-			filetype = "ogg"
-			
-		# Make output location relative to location of experiment
-		rel_loc = os.path.normpath(self.get("output_file"))
-		output_file = os.path.normpath(os.path.join(self.exp.experiment_path,rel_loc))
-
-		# Make sure file extension corresponds to audio type
-		extension = os.path.splitext(output_file)[1]
-		if extension != "":
-			ext = extension[1:]
-			if ext != filetype:
-				output_file += "." + filetype	
-		else:
-			output_file += "." + filetype
-
-		# Check for a subfolder (when it is specified) that it exists and if not, create it
-		if os.path.exists(os.path.dirname(output_file)):
-			if self.file_exists_action == "Append suffix to filename":
-				# Search for underscore/number suffixes								
-				output_file = self._generate_suffix(output_file)										
-		else:
-			if os.path.dirname(rel_loc) != "":
-				try:				
-					os.makedirs(os.path.dirname(output_file))
-				except Exception as e:
-					raise exceptions.runtime_error("Error creating sound file: " + str(e))
-		
+				
 		# Create real recorder or dummy recorder (which just passes everything to empty functions)
 		if self.recording == "Yes":
+			# Process attributes
+			if self.get("channels") == "Mono":
+				channels = 1
+			elif self.get("channels") == "Stereo":
+				channels = 2
+			samplerate = self.get("samplerate")
+			
+			compression = self.get("compression")
+			if compression == "None (wav)":
+				filetype = "wav"
+			elif compression == "MP3":
+				filetype = "mp3"
+				
+			# Not yet supported, bug in pymedia when saving ogg files
+			elif compression == "Ogg Vorbis":
+				filetype = "ogg"
+				
+			# Make output location relative to location of experiment
+			rel_loc = os.path.normpath(self.get("output_file"))
+			output_file = os.path.normpath(os.path.join(self.exp.experiment_path,rel_loc))
+	
+			# Make sure file extension corresponds to audio type
+			extension = os.path.splitext(output_file)[1]
+			if extension != "":
+				ext = extension[1:]
+				if ext != filetype:
+					output_file += "." + filetype	
+			else:
+				output_file += "." + filetype
+	
+			# Check for a subfolder (when it is specified) that it exists and if not, create it
+			if os.path.exists(os.path.dirname(output_file)):
+				if self.file_exists_action == "Append suffix to filename":
+					# Search for underscore/number suffixes								
+					output_file = self._generate_suffix(output_file)										
+			else:
+				if os.path.dirname(rel_loc) != "":
+					try:				
+						os.makedirs(os.path.dirname(output_file))
+					except Exception as e:
+						raise exceptions.runtime_error("Error creating sound file: " + str(e))						
+
 			self.soundrecorder = soundrecorder.Soundrecorder(output_file, channels, samplerate, filetype)
 		else:
 			self.soundrecorder = soundrecorder.DummyRecorder()
