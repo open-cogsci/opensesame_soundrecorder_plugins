@@ -37,6 +37,19 @@ except:
 import threading
 import wave
 
+try:
+	import pymedia.audio.sound as sound
+	import pymedia.audio.acodec as acodec
+except:
+	try:
+		sys.path.append(os.getcwd())
+		(f,p,d) = imp.find_module("pymedia",[os.path.dirname(__file__)])
+		imp.load_module("pymedia",f,p,d)
+		import pymedia.audio.sound as sound
+		import pymedia.audio.acodec as acodec
+	except Exception as e:
+		raise e
+
 class Soundrecorder(threading.Thread):
 	def __init__(self, output_file="default.wav", channels=2, samplerate=44100, filetype="wav"):
 		self.output_file = output_file
