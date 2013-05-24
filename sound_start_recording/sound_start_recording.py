@@ -116,6 +116,10 @@ class sound_start_recording(item.item):
 				
 			# Make output location relative to location of experiment
 			rel_loc = os.path.normpath(self.get("output_file"))
+			
+			if self.exp.experiment_path is None:
+				raise exceptions.runtime_error("Path to experiment not found. Please save the experiment to a file first")
+			
 			output_file = os.path.normpath(os.path.join(self.exp.experiment_path,rel_loc))
 	
 			# Make sure file extension corresponds to audio type

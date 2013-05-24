@@ -89,7 +89,7 @@ class Soundrecorder(threading.Thread):
 		} 	
 							
 		out_fp = open(self.output_file, 'wb')
-		ac= acodec.Encoder( cparams )									
+		ac = acodec.Encoder( cparams )									
 		
 		self._recording = True
 		self.input.start()
