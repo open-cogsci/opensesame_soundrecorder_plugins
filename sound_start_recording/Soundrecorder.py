@@ -16,25 +16,46 @@ You should have received a copy of the GNU General Public License
 along with OpenSesame.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import imp
+# Import OpenSesame specific items
+from libopensesame import item, debug, generic_response
+from libqtopensesame.items.qtautoplugin import qtautoplugin
+# The `osexception` class is only available as of OpenSesame 2.8.0. If it is not
+# available, fall back to the regular `Exception` class.
+try:
+	from libopensesame.exceptions import osexception
+except:
+	osexception = Exception
+	
+	
 import os
 import sys
+import imp
 import time
 import threading
 import wave
-
+	
+if os.name == "nt":
+	if hasattr(sys,"frozen") and sys.frozen in ("windows_exe", "console_exe"):
+		exe_path = os.path.dirname(sys.executable)
+		os.environ["PATH"] = os.path.join(exe_path, "gstreamer", "dll") + ';' + os.environ["PATH"]
+		os.environ["GST_PLUGIN_PATH"] = os.path.join(exe_path, "gstreamer", "plugins")
+		sys.path.append(os.path.join(exe_path, "gstreamer", "python"))		
+	else:
+		os.environ["PATH"] = os.path.join(os.environ["GSTREAMER_SDK_ROOT_X86"],"bin") + ';' + os.environ["PATH"]
+		sys.path.append(os.path.join(os.environ["GSTREAMER_SDK_ROOT_X86"],"lib","python2.7","site-packages"))
+if os.name == "posix" and sys.platform == "darwin":
+	# For OS X
+	# When installed with the GStreamer SDK installers from GStreamer.com
+	sys.path.append("/Library/Frameworks/GStreamer.framework/Versions/Current/lib/python2.7/site-packages")
+		
+# Try to load Gstreamer
 try:
-	import pymedia.audio.sound as sound
-	import pymedia.audio.acodec as acodec
+	import pygst
+	pygst.require("0.10")
+	import gst
 except:
-	try:
-		sys.path.append(os.getcwd())
-		(f,p,d) = imp.find_module("pymedia",[os.path.dirname(__file__)])
-		imp.load_module("pymedia",f,p,d)
-		import pymedia.audio.sound as sound
-		import pymedia.audio.acodec as acodec
-	except Exception as e:
-		raise e
+	raise osexception("OpenSesame could not find the GStreamer framework!")
+
 
 class Soundrecorder(threading.Thread):
 	def __init__(self, output_file="default.wav", channels=2, samplerate=44100, filetype="wav"):
@@ -42,13 +63,28 @@ class Soundrecorder(threading.Thread):
 		self.channels = int(channels)
 		self.samplerate = int(samplerate)
 		self.filetype = filetype
-		self._format = sound.AFMT_S16_LE
 		self._recording = False
 		self._allowed_filetypes = ["wav","mp3"] #ogg to be added
 		
-		self.input = sound.Input( self.samplerate, self.channels, self._format )					
-		
 		threading.Thread.__init__ ( self )
+		
+		if os.name == "nt":
+			import pyaudio
+			pa = pyaudio.PyAudio()
+			no_of_devices = pa.get_device_count()
+			input_device = "  "
+		else:
+			input_device = "autoaudiosrc"
+			
+		if filetype == "wav":
+			conversion =  "  "
+		elif filetype == "mp3":
+			conversion =  "  "
+			
+		file_saving = "filesink location=" + output_file			
+		
+		self.pipeline = gst.parse_launch(input_device + " ! " + conversion + " ! " + file_saving ) 
+                                               
 		
 
 	def run(self):
@@ -126,4 +162,4 @@ class DummyRecorder():
 		pass
 	
 	def is_recording(self):
-		pass
+		return False

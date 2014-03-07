@@ -15,25 +15,24 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with OpenSesame.  If not, see <http://www.gnu.org/licenses/>.
 """
+__author__ = "Daniel Schreij"
+__license__ = "GPLv3"
 
-from libopensesame import item, exceptions, debug
-from libqtopensesame import qtplugin
+# Import OpenSesame specific items
+from libopensesame import item, debug, generic_response
+from libqtopensesame.items.qtautoplugin import qtautoplugin
+# The `osexception` class is only available as of OpenSesame 2.8.0. If it is not
+# available, fall back to the regular `Exception` class.
+try:
+	from libopensesame.exceptions import osexception
+except:
+	osexception = Exception
+	
 import os
+import sys
 import re
 import imp
 
-# Already try to import required libraries, otherwise the error might occur
-# in the other (Soundrecorder) thread and not be caught
-try:
-	import pymedia.audio.sound as sound
-	import pymedia.audio.acodec as acodec
-	import wave
-except Exception as e:
-	exceptions.runtime_error("Failed to import required library: " + str(e))
-	
-
-__author__ = "Daniel Schreij"
-__license__ = "GPLv3"
 
 class sound_start_recording(item.item):
 
@@ -48,7 +47,7 @@ class sound_start_recording(item.item):
 		Constructor
 		"""
 		self.item_type = "sound_start_recording"
-		self.version = 0.12
+		self.version = 1.0
 
 		self.recording = "Yes"
 		self.channels = "Mono"
@@ -89,7 +88,7 @@ class sound_start_recording(item.item):
 	def prepare(self):
 		# Make sure only one instance of sound recorder records at the same time
 		if hasattr(self.exp,"soundrecorder") and self.exp.soundrecorder.is_recording():
-			raise exceptions.runtime_error("Sound recorder already running")
+			raise osexception("Sound recorder already running")
 		
 		# Load Soundrecorder class
 		path = os.path.join(os.path.dirname(__file__), "Soundrecorder.py")
@@ -118,7 +117,7 @@ class sound_start_recording(item.item):
 			rel_loc = os.path.normpath(self.get("output_file"))
 			
 			if self.exp.experiment_path is None:
-				raise exceptions.runtime_error("Path to experiment not found. Please save the experiment to a file first")
+				raise osexception("Path to experiment not found. Please save the experiment to a file first")
 			
 			output_file = os.path.normpath(os.path.join(self.exp.experiment_path,rel_loc))
 	
@@ -141,7 +140,7 @@ class sound_start_recording(item.item):
 					try:				
 						os.makedirs(os.path.dirname(output_file))
 					except Exception as e:
-						raise exceptions.runtime_error("Error creating sound file: " + str(e))						
+						raise osexception.runtime_error("Error creating sound file: " + str(e))						
 
 			self.soundrecorder = soundrecorder.Soundrecorder(output_file, channels, samplerate, filetype)
 		else:
@@ -154,7 +153,7 @@ class sound_start_recording(item.item):
 	def run(self):
 		# Make sure only one instance of sound recorder records at the same time
 		if hasattr(self.exp,"soundrecorder") and self.exp.soundrecorder.is_recording():
-			raise exceptions.runtime_error("Sound recorder already running. Please make sure only one instance of sound recorder is recording at the same time")		
+			raise osexception("Sound recorder already running. Please make sure only one instance of sound recorder is recording at the same time")		
 		
 		# Make this sound recorder the current sound recorder for sound_stop_recording to operate on later.
 		self.exp.soundrecorder = self.soundrecorder
