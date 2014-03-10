@@ -1,0 +1,79 @@
+{
+	"version"		: "1.0",
+	"author"		: "Daniel Schreij",
+	"url"			: "https://github.com/dschreij/opensesame_soundrecorder_plugins",
+	"category"		: "Response collection",
+	"controls" : [
+		{
+			"type"		: "combobox",
+			"var"		: "recording",
+			"label"		: "Record sound",
+			"options"	: [
+				"Yes",
+				"No"
+			],
+			"tooltip"	: "Indicates if sound should be recorded (No for test-runs)"
+		},
+		{
+			"type"		: "combobox",
+			"name"		: "input_device_selector",
+			"var"		: "input_device",
+			"label"		: "Recording device",
+			"options"	: [	
+			],
+			"tooltip"	: "Select the device to record from"
+		},		
+		{
+			"type"		: "combobox",			
+			"var"		: "channels",
+			"label"		: "Channels",
+			"options"	: [
+				"Mono",
+				"Stereo"
+			],
+			"tooltip"	: "Record with one or two channels"
+		},
+		{
+			"type"		: "combobox",
+			"var"		: "samplerate",
+			"label"		: "Sample rate",
+			"options"	: [
+				"44100",
+				"22050",
+				"11025"
+			],
+			"tooltip"	: "Sampler ate of recording (higher is better quality)"
+		},
+		{
+			"type"		: "combobox",
+			"var"		: "compression",
+			"label"		: "Compression",
+			"options"	: [
+				"None (wav)", 
+				"Ogg Vorbis"
+			],
+			"tooltip"	: "Compression type of audio output"
+		},
+		{
+			"type"		: "line_edit",
+			"var"		: "output_file",
+			"label"		: "Output Folder/File",
+			"tooltip"	: "Path to output file"
+		},
+		{
+			"type"		: "combobox",
+			"var"		: "file_exists_action",
+			"label"		: "If file exists",
+			"options"	: [
+				"Overwrite",
+				"Append suffix to filename"
+			],
+			"tooltip"	: "Choose what to do if the sound file already exists"
+		},
+		{
+			"type"		: "text",
+			"label"		: "<small><b>Sound Recorder Plug-in v1.0 </b> based on the GStreamer framework, Copyright (2010-2014) Daniel Schreij</b></small>"
+		}
+	]
+}
+

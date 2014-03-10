@@ -1,0 +1,13 @@
+{
+	"version"		: "1.0",
+	"author"		: "Daniel Schreij",
+	"url"			: "https://github.com/dschreij/opensesame_soundrecorder_plugins",
+	"category"		: "Response collection",
+	"controls" : [
+		{
+			"type"		: "text",
+			"label"		: "<small><b>Sound Recorder Plug-in v1.0 </b> based on the GStreamer framework, Copyright (2010-2014) Daniel Schreij</b></small>"
+		}
+	]
+}
+

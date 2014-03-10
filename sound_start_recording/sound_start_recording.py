@@ -19,8 +19,9 @@ __author__ = "Daniel Schreij"
 __license__ = "GPLv3"
 
 # Import OpenSesame specific items
-from libopensesame import item, debug, generic_response
+from libopensesame import item
 from libqtopensesame.items.qtautoplugin import qtautoplugin
+
 # The `osexception` class is only available as of OpenSesame 2.8.0. If it is not
 # available, fall back to the regular `Exception` class.
 try:
@@ -29,9 +30,9 @@ except:
 	osexception = Exception
 	
 import os
-import sys
 import re
 import imp
+import pyaudio
 
 
 class sound_start_recording(item.item):
@@ -44,12 +45,26 @@ class sound_start_recording(item.item):
 
 	def __init__(self, name, experiment, string = None):
 		"""
-		Constructor
+		Constructor. 
+
+		Arguments:
+		name -- the name of the item
+		experiment -- the opensesame experiment
+
+		Keyword arguments:
+		string -- a definition string for the item (Default = None)
 		"""
+	
+		# Enumerate audio devices
+		pa = pyaudio.PyAudio()
+		# Get default audio device for input
+		default_device = pa.get_default_input_device_info()
+														
 		self.item_type = "sound_start_recording"
 		self.version = 1.0
 
 		self.recording = "Yes"
+		self.input_device = default_device["name"]
 		self.channels = "Mono"
 		self.samplerate = "44100"		
 		self.output_file = "default"
@@ -65,6 +80,12 @@ class sound_start_recording(item.item):
 
 	
 	def _generate_suffix(self,path_to_file):		
+		"""
+		Function that creates a suffix for a filename, taking into account previous suffixes
+
+		Arguments:
+		path_to_file -- the path to the file to create the suffix for.
+		"""
 		pattern = "_[0-9]+$"		
 		(filename,ext) = os.path.splitext(path_to_file)
 				
@@ -101,6 +122,7 @@ class sound_start_recording(item.item):
 				channels = 1
 			elif self.get("channels") == "Stereo":
 				channels = 2
+			
 			samplerate = self.get("samplerate")
 			
 			compression = self.get("compression")
@@ -108,7 +130,6 @@ class sound_start_recording(item.item):
 				filetype = "wav"
 			elif compression == "MP3":
 				filetype = "mp3"
-				
 			# Not yet supported, bug in pymedia when saving ogg files
 			elif compression == "Ogg Vorbis":
 				filetype = "ogg"
@@ -142,7 +163,7 @@ class sound_start_recording(item.item):
 					except Exception as e:
 						raise osexception.runtime_error("Error creating sound file: " + str(e))						
 
-			self.soundrecorder = soundrecorder.Soundrecorder(output_file, channels, samplerate, filetype)
+			self.soundrecorder = soundrecorder.Soundrecorder(self.input_device, output_file, channels, samplerate, filetype)
 		else:
 			self.soundrecorder = soundrecorder.DummyRecorder()
 			
@@ -159,11 +180,11 @@ class sound_start_recording(item.item):
 		self.exp.soundrecorder = self.soundrecorder
 		
 		# Start recording
-		self.exp.soundrecorder.start()
+		self.exp.soundrecorder.record()
 		return True
 
 
-class qtsound_start_recording(sound_start_recording, qtplugin.qtplugin):
+class qtsound_start_recording(sound_start_recording, qtautoplugin):
 	"""
 	This class (the class named qt[name of module] handles
 	the GUI part of the plugin. For more information about
@@ -172,14 +193,14 @@ class qtsound_start_recording(sound_start_recording, qtplugin.qtplugin):
 	"""
 
 	def __init__(self, name, experiment, string = None):
-
+		
 		"""
 		Constructor
 		"""
 
 		# Pass the word on to the parents
 		sound_start_recording.__init__(self, name, experiment, string)
-		qtplugin.qtplugin.__init__(self, __file__)
+		qtautoplugin.__init__(self, __file__)
 
 	def init_edit_widget(self):
 		
@@ -190,63 +211,45 @@ class qtsound_start_recording(sound_start_recording, qtplugin.qtplugin):
 
 		# Lock the widget until we're doing creating it
 		self.lock = True
-
+		
 		# Pass the word on to the parent
-		qtplugin.qtplugin.init_edit_widget(self, False)
-		self.add_combobox_control("recording", "Record sound", ["Yes","No"], \
-			tooltip = "Indicates if sound should be recorded (No for test-runs)")
-		self.add_combobox_control("channels", "Channels", ["Mono","Stereo"], \
-			tooltip = "Record in one or two channels")   
-		self.add_combobox_control("samplerate", "Sample rate", ["44100","22050","11025"], \
-			tooltip = "Sampler ate of recording (higher is better quality)")
-		self.add_line_edit_control("output_file", "Output Folder/File", tooltip = "Path to output file")
-		self.add_combobox_control("compression", "Compression", ["None (wav)", "MP3"], \
-			tooltip = "Compression type of audio output")
-		self.add_combobox_control("file_exists_action", "If file exists", ["Overwrite","Append suffix to filename"], \
-			tooltip = "Choose what to do if the sound file already exists")
-		self.add_text("<small><b>Sound recorder OpenSesame plug-in v%.2f, Copyright (2010-2012) %s </b></small>" % (self.version, __author__))
+		qtautoplugin.init_edit_widget(self)
+		
+		# Enumerate audio devices
+		pa = pyaudio.PyAudio()
+		# Get number of present audio devices
+		no_of_devices = pa.get_device_count()
+		# Get default audio device for input
+		default_device = pa.get_default_input_device_info()
+			
+		# Create a list of available audio devices
+		# Make sure the default one is at the top of the list
+		input_devices = []
+		for i in range(0,no_of_devices):
+			# Get current device info
+			dev = pa.get_device_info_by_index(i)
+						
+			# Check if device is for input
+			if dev["maxInputChannels"] > 0:
+				# If device is system's default, put at top of list
+				if dev == default_device:
+					input_devices.insert(0,dev)
+				else:					
+					input_devices.append(dev)
 
-		# Add a stretch to the edit_vbox, so that the controls do not
-		# stretch to the bottom of the window.
-		self.edit_vbox.addStretch()
+		# Extract names from dictionary
+		input_devices = [str(ip["name"]) for ip in input_devices]	
 
+		self.input_device_selector.addItems(input_devices)		
+				
 		# Unlock
 		self.lock = False
 
 	def apply_edit_changes(self):
-
-		"""
-		Set the variables based on the controls
-		"""
-
-		# Abort if the parent reports failure of if the controls are locked
-		if not qtplugin.qtplugin.apply_edit_changes(self, False) or self.lock:
-			return False
-
-		# Refresh the main window, so that changes become visible everywhere
-		self.experiment.main_window.refresh(self.name)
-
-		# Report success
+		
+		"""Applies changes to the controls."""
+		
+		qtautoplugin.apply_edit_changes(self)
 		return True
-
-	def edit_widget(self):
-
-		"""
-		Set the controls based on the variables
-		"""
-
-		# Lock the controls, otherwise a recursive loop might aris
-		# in which updating the controls causes the variables to be
-		# updated, which causes the controls to be updated, etc...
-		self.lock = True
-
-		# Let the parent handle everything
-		qtplugin.qtplugin.edit_widget(self)
-
-		# Unlock
-		self.lock = False
-
-		# Return the _edit_widget
-		return self._edit_widget
 
 

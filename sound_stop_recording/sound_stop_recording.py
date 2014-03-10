@@ -15,9 +15,19 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with OpenSesame.  If not, see <http://www.gnu.org/licenses/>.
 """
+__author__ = "Daniel Schreij"
+__license__ = "GPLv3"
 
-from libopensesame import item, exceptions, debug
-from libqtopensesame import qtplugin
+# Import OpenSesame specific items
+from libopensesame import item 
+from libqtopensesame.items.qtautoplugin import qtautoplugin
+
+# The `osexception` class is only available as of OpenSesame 2.8.0. If it is not
+# available, fall back to the regular `Exception` class.
+try:
+	from libopensesame.exceptions import osexception
+except:
+	osexception = Exception
 
 __author__ = "Daniel Schreij"
 __license__ = "GPLv3"
@@ -49,11 +59,13 @@ class sound_stop_recording(item.item):
 	def run(self):
 		if hasattr(self.exp,"soundrecorder"):
 			self.exp.soundrecorder.stop()
+			del(self.exp.soundrecorder)
 		else:
-			raise exceptions.runtime_error("No sound being recorded. Unable to stop recording")
+			raise osexception("No sound being recorded. Unable to stop recording")
 		return True
 
-class qtsound_stop_recording(sound_stop_recording, qtplugin.qtplugin):
+class qtsound_stop_recording(sound_stop_recording, qtautoplugin):
+
 	"""
 	This class (the class named qt[name of module] handles
 	the GUI part of the plugin. For more information about
@@ -61,42 +73,28 @@ class qtsound_stop_recording(sound_stop_recording, qtplugin.qtplugin):
 	<http://www.riverbankcomputing.co.uk/static/Docs/PyQt4/html/classes.html>
 	"""
 
-	def __init__(self, name, experiment, string = None):
+	def __init__(self, name, experiment, script = None):
 
 		"""
-		Constructor
+		Constructor.
+		
+		Arguments:
+		name		--	The item name.
+		experiment	--	The experiment object.
+		
+		Keyword arguments:
+		script		--	The definition script. (default=None).
 		"""
 
 		# Pass the word on to the parents
-		sound_stop_recording.__init__(self, name, experiment, string)
-		qtplugin.qtplugin.__init__(self, __file__)
-
-	def init_edit_widget(self):
-		
-		"""
-		This function creates the controls for the edit
-		widget.
-		"""
-		qtplugin.qtplugin.init_edit_widget(self, False)
-		
-		# Add a stretch to the edit_vbox, so that the controls do not
-		# stretch to the bottom of the window.
-		self.edit_vbox.addStretch()
+		sound_stop_recording.__init__(self, name, experiment, script)
+		qtautoplugin.__init__(self, __file__)
 
 	def apply_edit_changes(self):
-
-		"""
-		Set the variables based on the controls
-		"""
 		
-		# Report success
+		"""Applies changes to the controls."""
+		
+		qtautoplugin.apply_edit_changes(self)
 		return True
-
-	def edit_widget(self):
-
-		"""
-		Set the controls based on the variables
-		"""
-		return self._edit_widget
 
 

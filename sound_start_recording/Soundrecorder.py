@@ -15,10 +15,6 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with OpenSesame.  If not, see <http://www.gnu.org/licenses/>.
 """
-
-# Import OpenSesame specific items
-from libopensesame import item, debug, generic_response
-from libqtopensesame.items.qtautoplugin import qtautoplugin
 # The `osexception` class is only available as of OpenSesame 2.8.0. If it is not
 # available, fall back to the regular `Exception` class.
 try:
@@ -26,14 +22,9 @@ try:
 except:
 	osexception = Exception
 	
-	
 import os
 import sys
-import imp
-import time
-import threading
-import wave
-	
+
 if os.name == "nt":
 	if hasattr(sys,"frozen") and sys.frozen in ("windows_exe", "console_exe"):
 		exe_path = os.path.dirname(sys.executable)
@@ -50,6 +41,7 @@ if os.name == "posix" and sys.platform == "darwin":
 		
 # Try to load Gstreamer
 try:
+	import gobject
 	import pygst
 	pygst.require("0.10")
 	import gst
@@ -57,91 +49,59 @@ except:
 	raise osexception("OpenSesame could not find the GStreamer framework!")
 
 
-class Soundrecorder(threading.Thread):
-	def __init__(self, output_file="default.wav", channels=2, samplerate=44100, filetype="wav"):
+class Soundrecorder():
+	"""
+	Constructor. 
+
+	Arguments:
+	input device -- the ID string of the device to record from
+
+	Keyword arguments:
+	output_file -- the path to the file to save the recording to. (Default = default.wav)
+	channels -- the number of channels to record with (1 or 2, Default = 2)
+	samplerate -- the default samplerate to record with (44100, 22050 or 11025, Default = 44100)
+	filetype -- the type of compression to apply (or none at all) (wav, ogg or mp3, Default = wav)	
+	"""
+	
+	def __init__(self, inputdevice, output_file="default.wav", channels=2, samplerate=44100, filetype="wav"):
 		self.output_file = output_file
 		self.channels = int(channels)
 		self.samplerate = int(samplerate)
 		self.filetype = filetype
 		self._recording = False
-		self._allowed_filetypes = ["wav","mp3"] #ogg to be added
+		self._allowed_filetypes = ["wav","ogg"] #mp3 to be added
 		
-		threading.Thread.__init__ ( self )
-		
-		if os.name == "nt":
-			import pyaudio
-			pa = pyaudio.PyAudio()
-			no_of_devices = pa.get_device_count()
-			input_device = "  "
+		if os.name == "nt":			
+			input_device = 'dshowaudiosrc device-name="' + inputdevice + '"'
 		else:
-			input_device = "autoaudiosrc"
+			input_device = 'autoaudiosrc'
 			
 		if filetype == "wav":
-			conversion =  "  "
-		elif filetype == "mp3":
-			conversion =  "  "
+			conversion =  'audioconvert ! audioresample ! wavenc'
+		elif filetype == "ogg":
+			conversion =  "audioconvert ! audioresample ! vorbisenc ! oggmux"
 			
-		file_saving = "filesink location=" + output_file			
-		
-		self.pipeline = gst.parse_launch(input_device + " ! " + conversion + " ! " + file_saving ) 
-                                               
-		
-
-	def run(self):
-		if self.filetype in self._allowed_filetypes:	
-			if self.filetype == "wav":
-				self._writeToWave()
-			else:		
-				self._encode(self.filetype)
-		else:
-			raise Exception("Illegal sound file type")
+		file_saving = 'filesink location="' + output_file + '"'			
 			
-		
-	def _writeToWave(self):		
-		recorded = []
+		try:
+			chain = input_device + ' ! ' + conversion + ' ! ' + file_saving
+			print chain
+			self.pipeline = gst.parse_launch( chain ) 
+			self.pipeline.set_state(gst.STATE_READY)
+		except Exception as e:
+			raise osexception("The device failed to initialize: " + e)
+                                               		
+	def record(self):
 		self._recording = True
-		self.input.start()
-		while self._recording:
-			s = self.input.getData()
-			if s and len(s):
-				recorded.append(s)
-			else:
-				time.sleep(0.03)
-				
-		self.input.stop()
-		data = ''.join(recorded)
+		print "Starting recording"
+		self.pipeline.set_state(gst.STATE_PLAYING)		
 		
-		wf = wave.open(self.output_file, 'wb')
-		wf.setparams( (self.channels, 2, self.samplerate, 0, 'NONE','') )
-		wf.writeframes(data)
-		wf.close()
-		
-		
-	def _encode(self,filetype):
-		cparams= { 	'id': acodec.getCodecID( filetype ),
-				'bitrate': 128000,
-				'sample_rate': self.samplerate,
-				'channels': self.channels 
-		} 	
-							
-		out_fp = open(self.output_file, 'wb')
-		ac = acodec.Encoder( cparams )									
-		
-		self._recording = True
-		self.input.start()
-		while self._recording:
-			s = self.input.getData()
-			if s and len(s):
-				for fr in ac.encode(s):
-					out_fp.write(fr)
-			else:
-				time.sleep(0.03)
-		self.input.stop()
-		
-
 	def stop(self):
-		self._recording = False
-
+		if self._recording:
+			self._recording = False
+			self.pipeline.set_state(gst.STATE_PAUSED)	
+			self.pipeline.set_state(gst.STATE_NULL)	
+			print "Ended recording"
 
 	def is_recording(self):
 		return self._recording
