@@ -135,12 +135,12 @@ class sound_start_recording(item.item):
 				filetype = "ogg"
 				
 			# Make output location relative to location of experiment
-			rel_loc = os.path.normpath(self.get("output_file"))
+			rel_loc = os.path.normpath(self.get("output_file"))						
 			
 			if self.exp.experiment_path is None:
 				raise osexception("Path to experiment not found. Please save the experiment to a file first")
 			
-			output_file = os.path.normpath(os.path.join(self.exp.experiment_path,rel_loc))
+			output_file = os.path.normpath(os.path.join(self.exp.experiment_path,rel_loc))						
 	
 			# Make sure file extension corresponds to audio type
 			extension = os.path.splitext(output_file)[1]
@@ -161,7 +161,8 @@ class sound_start_recording(item.item):
 					try:				
 						os.makedirs(os.path.dirname(output_file))
 					except Exception as e:
-						raise osexception.runtime_error("Error creating sound file: " + str(e))						
+						raise osexception.runtime_error("Error creating sound file: " + str(e))
+			print output_file
 
 			self.soundrecorder = soundrecorder.Soundrecorder(self.input_device, output_file, channels, samplerate, filetype)
 		else:

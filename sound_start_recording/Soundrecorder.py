@@ -24,6 +24,7 @@ except:
 	
 import os
 import sys
+import re
 
 if os.name == "nt":
 	if hasattr(sys,"frozen") and sys.frozen in ("windows_exe", "console_exe"):
@@ -41,7 +42,6 @@ if os.name == "posix" and sys.platform == "darwin":
 		
 # Try to load Gstreamer
 try:
-	import gobject
 	import pygst
 	pygst.require("0.10")
 	import gst
@@ -80,7 +80,8 @@ class Soundrecorder():
 			conversion =  'audioconvert ! audioresample ! wavenc'
 		elif filetype == "ogg":
 			conversion =  "audioconvert ! audioresample ! vorbisenc ! oggmux"
-			
+		
+		output_file = re.escape(output_file)
 		file_saving = 'filesink location="' + output_file + '"'			
 			
 		try:
