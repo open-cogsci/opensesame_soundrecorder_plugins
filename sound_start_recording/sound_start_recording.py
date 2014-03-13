@@ -58,13 +58,16 @@ class sound_start_recording(item.item):
 		# Enumerate audio devices
 		pa = pyaudio.PyAudio()
 		# Get default audio device for input
-		default_device = pa.get_default_input_device_info()
-														
+		try:
+			default_device = pa.get_default_input_device_info()
+			self.input_device = default_device["name"]
+		except IOError as e:
+			print "WARNING : {0}".format(e)
+			self.input_device = "NO INPUT DEVICE DETECTED"
+			
 		self.item_type = "sound_start_recording"
 		self.version = 1.0
-
 		self.recording = "Yes"
-		self.input_device = default_device["name"]
 		self.channels = "Mono"
 		self.samplerate = "44100"		
 		self.output_file = "default"
@@ -116,7 +119,11 @@ class sound_start_recording(item.item):
 		soundrecorder = imp.load_source("Soundrecorder", path)
 				
 		# Create real recorder or dummy recorder (which just passes everything to empty functions)
-		if self.recording == "Yes":
+		if self.recording == "Yes":	
+			if self.input_device == "NO INPUT DEVICE DETECTED":
+				raise osexception("No sound input device detected. Is the microphone connected? \
+				If not, please connect it, restart OpenSesame and reload the experiment.")				
+				
 			# Process attributes
 			if self.get("channels") == "Mono":
 				channels = 1
@@ -177,7 +184,7 @@ class sound_start_recording(item.item):
 		if hasattr(self.exp,"soundrecorder") and self.exp.soundrecorder.is_recording():
 			raise osexception("Sound recorder already running. Please make sure only one instance of sound recorder is recording at the same time")		
 		
-		# Make this sound recorder the current sound recorder for sound_stop_recording to operate on later.
+		# Make this sound recorder the active sound recorder for sound_stop_recording to operate on later.
 		self.exp.soundrecorder = self.soundrecorder
 		
 		# Start recording
@@ -193,14 +200,14 @@ class qtsound_start_recording(sound_start_recording, qtautoplugin):
 	<http://www.riverbankcomputing.co.uk/static/Docs/PyQt4/html/classes.html>
 	"""
 
-	def __init__(self, name, experiment, string = None):
+	def __init__(self, name, experiment, script = None):
 		
 		"""
 		Constructor
 		"""
 
 		# Pass the word on to the parents
-		sound_start_recording.__init__(self, name, experiment, string)
+		sound_start_recording.__init__(self, name, experiment, script)
 		qtautoplugin.__init__(self, __file__)
 
 	def init_edit_widget(self):
@@ -221,26 +228,32 @@ class qtsound_start_recording(sound_start_recording, qtautoplugin):
 		# Get number of present audio devices
 		no_of_devices = pa.get_device_count()
 		# Get default audio device for input
-		default_device = pa.get_default_input_device_info()
+		
+		try:
+			default_device = pa.get_default_input_device_info()
 			
-		# Create a list of available audio devices
-		# Make sure the default one is at the top of the list
-		input_devices = []
-		for i in range(0,no_of_devices):
-			# Get current device info
-			dev = pa.get_device_info_by_index(i)
-						
-			# Check if device is for input
-			if dev["maxInputChannels"] > 0:
-				# If device is system's default, put at top of list
-				if dev == default_device:
-					input_devices.insert(0,dev)
-				else:					
-					input_devices.append(dev)
-
-		# Extract names from dictionary
-		input_devices = [str(ip["name"]) for ip in input_devices]	
-
+			# Create a list of available audio devices
+			# Make sure the default one is at the top of the list
+			input_devices = []
+			for i in range(0,no_of_devices):
+				# Get current device info
+				dev = pa.get_device_info_by_index(i)
+							
+				# Check if device is for input
+				if dev["maxInputChannels"] > 0:
+					# If device is system's default, put at top of list
+					if dev == default_device:
+						input_devices.insert(0,dev)
+					else:					
+						input_devices.append(dev)
+	
+			# Extract names from dictionary
+			input_devices = [str(ip["name"]) for ip in input_devices]	
+		except IOError as e:
+			print "WARNING : {0}".format(e)
+			default_device = ""
+			input_devices = ["NO INPUT DEVICE DETECTED"]
+					
 		self.input_device_selector.addItems(input_devices)		
 				
 		# Unlock

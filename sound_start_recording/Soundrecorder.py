@@ -25,6 +25,7 @@ except:
 import os
 import sys
 import re
+import time
 
 if os.name == "nt":
 	if hasattr(sys,"frozen") and sys.frozen in ("windows_exe", "console_exe"):
@@ -71,15 +72,26 @@ class Soundrecorder():
 		self._recording = False
 		self._allowed_filetypes = ["wav","ogg"] #mp3 to be added
 		
+
+		## Input src 
 		if os.name == "nt":			
 			input_device = 'dshowaudiosrc device-name="' + inputdevice + '"'
+		elif os.name == "posix":
+			input_device = 'alsasrc device-name="' + inputdevice + '"'
 		else:
 			input_device = 'autoaudiosrc'
-			
+
+		## Further processing of audio
+
+		# Set correct bitrate and channels
+		conversion = 'audio/x-raw-int,rate={0},channels={1}'.format(self.samplerate, self.channels)	
+		
 		if filetype == "wav":
-			conversion =  'audioconvert ! audioresample ! wavenc'
+			conversion =  'queue ! ' + conversion + ' ! audioresample ! wavenc'
 		elif filetype == "ogg":
-			conversion =  "audioconvert ! audioresample ! vorbisenc ! oggmux"
+			conversion =  'queue ! ' + conversion + ' ! audiorate ! audioresample ! vorbisenc ! oggmux'
+		
+		## Output file determination	
 		
 		output_file = re.escape(output_file)
 		file_saving = 'filesink location="' + output_file + '"'			
@@ -87,23 +99,24 @@ class Soundrecorder():
 		try:
 			chain = input_device + ' ! ' + conversion + ' ! ' + file_saving
 			print chain
-			self.pipeline = gst.parse_launch( chain ) 
-			self.pipeline.set_state(gst.STATE_READY)
+			self.pipeline = gst.parse_launch( chain ) 			
 		except Exception as e:
 			raise osexception("The device failed to initialize: " + e)
                                                		
 	def record(self):
 		self._recording = True
-		print "Starting recording"
 		self.pipeline.set_state(gst.STATE_PLAYING)		
 		
 	def stop(self):
 		if self._recording:
+			# When recording in ogg, somehow last part of the recording is 
+			# missing if you stop immediately. Therefore delay stop with 500 ms
+			if self.filetype in ["ogg"]:
+				time.sleep(0.5)	
 			self._recording = False
-			self.pipeline.set_state(gst.STATE_PAUSED)	
-			self.pipeline.set_state(gst.STATE_NULL)	
-			print "Ended recording"
-
+			self.pipeline.set_state(gst.STATE_PAUSED)
+			del(self.pipeline)
+			
 	def is_recording(self):
 		return self._recording
 		
@@ -113,7 +126,7 @@ class DummyRecorder():
 	def __init__(self):
 		pass
 
-	def run(self):
+	def record(self):
 		pass
 
 	def stop(self):
