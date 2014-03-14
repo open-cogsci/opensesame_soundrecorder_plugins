@@ -64,10 +64,10 @@ class Soundrecorder():
 	filetype -- the type of compression to apply (or none at all) (wav, ogg or mp3, Default = wav)	
 	"""
 	
-	def __init__(self, inputdevice, output_file="default.wav", channels=2, samplerate=44100, filetype="wav"):
+	def __init__(self, inputdevice, output_file="default.wav", channels=2, quality="high", filetype="wav"):
 		self.output_file = output_file
 		self.channels = int(channels)
-		self.samplerate = int(samplerate)
+		self.quality = quality
 		self.filetype = filetype
 		self._recording = False
 		self._allowed_filetypes = ["wav","ogg"] #mp3 to be added
@@ -83,13 +83,35 @@ class Soundrecorder():
 
 		## Further processing of audio
 
-		# Set correct bitrate and channels
-		conversion = 'audio/x-raw-int,rate={0},channels={1}'.format(self.samplerate, self.channels)	
-		
 		if filetype == "wav":
-			conversion =  'queue ! ' + conversion + ' ! audioresample ! wavenc'
+			channels = self.channels
+			if self.quality == "high":
+				rate = 44100
+			else:
+				rate = 11025
+				#TODO: Make this work
+				channels = 1  # Bug workaround SHOULD BE FIXED!. With 1 channel 11khz outputs only cracklinkg noises...
+			processing = 'audio/x-raw-int, channels={0}, rate={1}'.format(channels,rate) + ' ! audioconvert ! audioresample ! wavenc'
 		elif filetype == "ogg":
-			conversion =  'queue ! ' + conversion + ' ! audiorate ! audioresample ! vorbisenc ! oggmux'
+			if self.quality == "high":
+				qual = 0.5
+			else:
+				qual = 0.1
+				
+			processing = 'audio/x-raw-int, channels={0} ! audioconvert ! audioresample ! vorbisenc quality={1} ! oggmux'.format(self.channels, qual)
+		elif filetype == "mp3":	
+			if os.name == "nt":
+				raise osexception("MP3 compression is not yet available for Windows. Please select another option for compression.")
+			
+			if self.quality == "high":
+				qual = 5
+			else:
+				qual = 1
+			if self.channels == 1:
+				mono = "true"
+			else:
+				mono = "false"						
+			processing = 'audioconvert ! audioresample ! lamemp3enc mono={0}, quality={1} ! id3v2mux'.format(mono, qual)
 		
 		## Output file determination	
 		
@@ -97,24 +119,24 @@ class Soundrecorder():
 		file_saving = 'filesink location="' + output_file + '"'			
 			
 		try:
-			chain = input_device + ' ! ' + conversion + ' ! ' + file_saving
+			chain = input_device + ' ! ' + processing + ' ! ' + file_saving
 			print chain
 			self.pipeline = gst.parse_launch( chain ) 			
 		except Exception as e:
-			raise osexception("The device failed to initialize: " + e)
+			raise osexception("The device failed to initialize: {0}".format(e))
                                                		
 	def record(self):
 		self._recording = True
 		self.pipeline.set_state(gst.STATE_PLAYING)		
 		
 	def stop(self):
-		if self._recording:
-			# When recording in ogg, somehow last part of the recording is 
-			# missing if you stop immediately. Therefore delay stop with 500 ms
-			if self.filetype in ["ogg"]:
-				time.sleep(0.5)	
+		if self._recording:		
 			self._recording = False
-			self.pipeline.set_state(gst.STATE_PAUSED)
+			# When recording in ogg, somehow last part of the recording is 
+			# missing if you stop immediately. Therefore delay stop with 500 ms	
+			if self.filetype in ["ogg"]:
+				time.sleep(1)	
+			self.pipeline.set_state(gst.STATE_PAUSED)			
 			del(self.pipeline)
 			
 	def is_recording(self):

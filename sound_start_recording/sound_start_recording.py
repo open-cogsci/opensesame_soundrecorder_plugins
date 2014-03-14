@@ -69,10 +69,11 @@ class sound_start_recording(item.item):
 		self.version = 1.0
 		self.recording = "Yes"
 		self.channels = "Mono"
-		self.samplerate = "44100"		
+		self.sound_quality = "High"		
 		self.output_file = "default"
 		self.compression = "None (wav)"
 		self.file_exists_action = "Overwrite"
+		
 		self.exp = experiment
 
 		# Provide a short accurate description of the items functionality
@@ -130,14 +131,13 @@ class sound_start_recording(item.item):
 			elif self.get("channels") == "Stereo":
 				channels = 2
 			
-			samplerate = self.get("samplerate")
+			sound_quality = self.get("sound_quality").lower()
 			
 			compression = self.get("compression")
 			if compression == "None (wav)":
 				filetype = "wav"
 			elif compression == "MP3":
 				filetype = "mp3"
-			# Not yet supported, bug in pymedia when saving ogg files
 			elif compression == "Ogg Vorbis":
 				filetype = "ogg"
 				
@@ -171,7 +171,7 @@ class sound_start_recording(item.item):
 						raise osexception.runtime_error("Error creating sound file: " + str(e))
 			print output_file
 
-			self.soundrecorder = soundrecorder.Soundrecorder(self.input_device, output_file, channels, samplerate, filetype)
+			self.soundrecorder = soundrecorder.Soundrecorder(self.input_device, output_file, channels, sound_quality, filetype)
 		else:
 			self.soundrecorder = soundrecorder.DummyRecorder()
 			
