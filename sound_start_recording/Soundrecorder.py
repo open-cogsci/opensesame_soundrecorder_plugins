@@ -75,9 +75,12 @@ class Soundrecorder():
 
 		## Input src 
 		if os.name == "nt":			
-			input_device = 'dshowaudiosrc device-name="' + inputdevice + '"'
-		elif os.name == "posix":
-			input_device = 'alsasrc device-name="' + inputdevice + '"'
+			input_device = 'dshowaudiosrc device-name="' + inputdevice + '"'			
+		# Device selection does not work properly yet in Linux			
+		# Use autoaudiosrc instead, which does the trick quite nicely	
+		# TODO: fix this!
+#		elif os.name == "posix":
+#			input_device = 'alsasrc device-name="' + inputdevice + '"'
 		else:
 			input_device = 'autoaudiosrc'
 
