@@ -74,6 +74,7 @@ class Soundrecorder(threading.Thread):
 				time.sleep(0.03)
 				
 		self.input.stop()
+		self.input = None
 		data = ''.join(recorded)
 		
 		wf = wave.open(self.output_file, 'wb')
@@ -102,7 +103,7 @@ class Soundrecorder(threading.Thread):
 			else:
 				time.sleep(0.03)
 		self.input.stop()
-		
+		self.input = None
 
 	def stop(self):
 		self._recording = False
