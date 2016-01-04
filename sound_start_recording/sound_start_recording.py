@@ -201,7 +201,7 @@ class qtsound_start_recording(sound_start_recording, qtplugin.qtplugin):
 			tooltip = "Compression type of audio output")
 		self.add_combobox_control("file_exists_action", "If file exists", ["Overwrite","Append suffix to filename"], \
 			tooltip = "Choose what to do if the sound file already exists")
-		self.add_text("<small><b>Sound recorder OpenSesame plug-in v%.2f, Copyright (2010-2012) %s </b></small>" % (self.version, __author__))
+		self.add_text("<small><b>Sound recorder OpenSesame plug-in v%.2f, Copyright (2010-2016) %s </b></small>" % (self.version, __author__))
 
 		# Add a stretch to the edit_vbox, so that the controls do not
 		# stretch to the bottom of the window.
