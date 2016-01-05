@@ -87,6 +87,9 @@ class sound_start_recording(item.item):
 		
 		
 	def prepare(self):
+		# Call parent functions.
+		item.item.prepare(self)
+		
 		# Make sure only one instance of sound recorder records at the same time
 		if hasattr(self.exp,"soundrecorder") and self.exp.soundrecorder.is_recording():
 			raise exceptions.runtime_error("Sound recorder already running")
@@ -148,6 +151,9 @@ class sound_start_recording(item.item):
 
 
 	def run(self):
+		# Record the timestamp of the plug-in execution.
+		self.set_item_onset()
+		
 		# Make sure only one instance of sound recorder records at the same time
 		if hasattr(self.exp,"soundrecorder") and self.exp.soundrecorder.is_recording():
 			raise exceptions.runtime_error("Sound recorder already running. Please make sure only one instance of sound recorder is recording at the same time")		
