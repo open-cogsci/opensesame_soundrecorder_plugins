@@ -44,9 +44,15 @@ class sound_stop_recording(item.item):
 
 
 	def prepare(self):
+		# Call parent functions.
+		item.item.prepare(self)
+		
 		return True
 
 	def run(self):
+		# Record the timestamp of the plug-in execution.
+		self.set_item_onset()
+		
 		if hasattr(self.exp,"soundrecorder"):
 			self.exp.soundrecorder.stop()
 		else:
