@@ -87,9 +87,6 @@ class sound_start_recording(item.item):
 		
 		
 	def prepare(self):
-		# Call parent functions.
-		item.item.prepare(self)
-		
 		# Make sure only one instance of sound recorder records at the same time
 		if hasattr(self.exp,"soundrecorder") and self.exp.soundrecorder.is_recording():
 			raise exceptions.runtime_error("Sound recorder already running")
@@ -123,6 +120,10 @@ class sound_start_recording(item.item):
 
 			# Make output location relative to location of experiment
 			rel_loc = os.path.normpath(self.get("output_file"))
+			
+			if self.exp.experiment_path is None:
+				raise exceptions.runtime_error("Path to experiment not found. Please save the experiment to a file first")
+			
 			output_file = os.path.normpath(os.path.join(self.exp.experiment_path,rel_loc))
 	
 			# Make sure file extension corresponds to audio type
@@ -155,9 +156,6 @@ class sound_start_recording(item.item):
 
 
 	def run(self):
-		# Record the timestamp of the plug-in execution.
-		self.set_item_onset()
-		
 		# Make sure only one instance of sound recorder records at the same time
 		if hasattr(self.exp,"soundrecorder") and self.exp.soundrecorder.is_recording():
 			raise exceptions.runtime_error("Sound recorder already running. Please make sure only one instance of sound recorder is recording at the same time")		
@@ -211,7 +209,7 @@ class qtsound_start_recording(sound_start_recording, qtplugin.qtplugin):
 			tooltip = "Compression type of audio output")
 		self.add_combobox_control("file_exists_action", "If file exists", ["Overwrite","Append suffix to filename"], \
 			tooltip = "Choose what to do if the sound file already exists")
-		self.add_text("<small><b>Sound recorder OpenSesame plug-in v%.2f, Copyright (2010-2016) %s </b></small>" % (self.version, __author__))
+		self.add_text("<small><b>Sound recorder OpenSesame plug-in v%.2f, Copyright (2010-2012) %s </b></small>" % (self.version, __author__))
 
 		# Add a stretch to the edit_vbox, so that the controls do not
 		# stretch to the bottom of the window.

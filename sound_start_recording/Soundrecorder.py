@@ -20,6 +20,8 @@ import imp
 import os
 import sys
 import time
+import threading
+import wave
 
 try:
 	import pymedia.audio.sound as sound
@@ -33,9 +35,6 @@ except:
 		import pymedia.audio.acodec as acodec
 	except Exception as e:
 		raise e
-	
-import threading
-import wave
 
 class Soundrecorder(threading.Thread):
 	def __init__(self, output_file="default.wav", channels=2, samplerate=44100, filetype="wav"):
@@ -91,7 +90,7 @@ class Soundrecorder(threading.Thread):
 		} 	
 							
 		out_fp = open(self.output_file, 'wb')
-		ac= acodec.Encoder( cparams )									
+		ac = acodec.Encoder( cparams )									
 		
 		self._recording = True
 		self.input.start()
