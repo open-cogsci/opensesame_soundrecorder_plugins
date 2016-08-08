@@ -48,7 +48,7 @@ class sound_start_recording(item.item):
 		Constructor
 		"""
 		self.item_type = "sound_start_recording"
-		self.version = 0.14
+		self.version = 0.15
 
 		self.recording = "Yes"
 		self.channels = "Mono"
